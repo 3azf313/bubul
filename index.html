@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>Say The Word On Beat — تحقق بعد نهاية المجموعة</title>
+  <style>
+    :root{
+      --bg1:#070b14; --bg2:#0b1533;
+      --text:#f3f6ff; --muted:#a9b7da;
+      --ok:#2dd4bf; --bad:#fb7185; --warn:#fbbf24;
+      --stroke: rgba(255,255,255,.14);
+      --shadow: 0 18px 60px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans Arabic", "Noto Kufi Arabic", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1100px 700px at 50% 10%, rgba(255,203,90,.38), transparent 55%),
+        radial-gradient(900px 600px at 12% 70%, rgba(122,92,255,.26), transparent 60%),
+        linear-gradient(180deg, var(--bg2), var(--bg1));
+      min-height:100vh;
+      padding:14px;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+    }
+    .app{width:min(1080px, 100%); display:grid; grid-template-columns: 1fr 360px; gap:14px;}
+    @media (max-width: 980px){.app{grid-template-columns: 1fr}}
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+      border:1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:14px;
+      backdrop-filter: blur(10px);
+    }
+
+    .stageWrap{display:flex; justify-content:center; margin:4px 0 10px;}
+    .stageBanner{
+      position:relative;
+      padding:10px 18px;
+      border-radius:999px;
+      background: linear-gradient(90deg, #6d28d9, #9333ea, #7c3aed);
+      border:1px solid rgba(255,255,255,.22);
+      box-shadow: 0 16px 45px rgba(0,0,0,.35);
+      font-weight:900;
+      font-size:20px;
+      text-align:center;
+      min-width: 220px;
+    }
+
+    .arenaTop{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:10px;}
+    .stats{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+    .pill{
+      display:flex; gap:8px; align-items:center;
+      padding:8px 10px; border-radius:999px;
+      background: rgba(0,0,0,.22);
+      border:1px solid var(--stroke);
+      color:var(--muted); font-size:13px; white-space:nowrap;
+    }
+    .pill b{color:var(--text)}
+    .pill .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+
+    .grid{display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-top:10px;}
+    @media (max-width: 520px){.grid{gap:10px}}
+    .card{
+      position:relative; aspect-ratio: 1 / 1;
+      border-radius: 16px;
+      border:2px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.18);
+      overflow:hidden;
+      display:flex; align-items:stretch; justify-content:stretch;
+      box-shadow: 0 14px 30px rgba(0,0,0,.26);
+    }
+    .cardInner{width:100%; height:100%; padding:10px; display:grid; grid-template-rows: 1fr auto; gap:8px;}
+    .iconBox{
+      border-radius: 12px; display:flex; align-items:center; justify-content:center;
+      font-size:38px; border:1px solid rgba(255,255,255,.14);
+      box-shadow: inset 0 0 0 999px rgba(255,255,255,.03);
+    }
+    .wordLabel{
+      text-align:center; font-weight:900; font-size:20px;
+      padding:8px 10px; border-radius: 12px;
+      background: rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.12);
+    }
+    @media (max-width: 520px){.iconBox{font-size:34px} .wordLabel{font-size:18px}}
+
+    .t-green .iconBox{background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.25), transparent 55%), linear-gradient(180deg, rgba(34,197,94,.55), rgba(16,185,129,.22));}
+    .t-blue  .iconBox{background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.25), transparent 55%), linear-gradient(180deg, rgba(59,130,246,.55), rgba(99,102,241,.22));}
+    .t-gold  .iconBox{background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.25), transparent 55%), linear-gradient(180deg, rgba(251,191,36,.55), rgba(245,158,11,.22));}
+    .t-red   .iconBox{background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.25), transparent 55%), linear-gradient(180deg, rgba(239,68,68,.58), rgba(251,113,133,.18));}
+    .t-purple .iconBox{background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.25), transparent 55%), linear-gradient(180deg, rgba(168,85,247,.55), rgba(99,102,241,.18));}
+    .t-pink  .iconBox{background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.25), transparent 55%), linear-gradient(180deg, rgba(236,72,153,.55), rgba(168,85,247,.18));}
+    .t-gray  .iconBox{background: radial-gradient(circle at 30% 20%, rgba(255,255,255,.22), transparent 55%), linear-gradient(180deg, rgba(148,163,184,.35), rgba(59,130,246,.10));}
+
+    .card.active{
+      outline: 4px solid rgba(251,191,36,.95);
+      box-shadow: 0 0 0 6px rgba(251,191,36,.22), 0 18px 55px rgba(0,0,0,.35);
+      transform: translateY(-1px);
+    }
+    .card.active::after{
+      content:"";
+      position:absolute; inset:-40%;
+      background: radial-gradient(circle at 50% 50%, rgba(251,191,36,.30), transparent 60%);
+      animation: pulse .6s ease-in-out infinite;
+      pointer-events:none;
+    }
+    @keyframes pulse{
+      0%{opacity:.35; transform: scale(.9)}
+      50%{opacity:.9; transform: scale(1)}
+      100%{opacity:.35; transform: scale(.9)}
+    }
+
+    .playWrap{display:flex; justify-content:center; align-items:center; flex-direction:column; gap:10px; margin-top:12px;}
+    .playBtn{
+      width:min(580px, 100%);
+      border:0; border-radius: 20px;
+      padding:16px 16px;
+      font-weight:900; font-size:20px;
+      color:var(--text);
+      background: rgba(45,212,191,.18);
+      border:1px solid rgba(45,212,191,.38);
+      cursor:pointer;
+      box-shadow: 0 14px 30px rgba(0,0,0,.26);
+      -webkit-tap-highlight-color: transparent;
+    }
+    @media (max-width: 520px){
+      .playBtn{font-size:18px; padding:14px 14px; border-radius:18px;}
+    }
+    .playBtn:active{transform: translateY(1px)}
+    .playBtn:disabled{opacity:.5; cursor:not-allowed}
+.nextBtn{background: rgba(99,102,241,.16); border:1px solid rgba(99,102,241,.38)}
+
+/* Modal */
+.modal.hidden{display:none}
+.modal{position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:16px;}
+.modalBackdrop{position:absolute; inset:0; background: rgba(0,0,0,.55); backdrop-filter: blur(4px);}
+.modalCard{position:relative; width:min(560px, 100%); border-radius:22px; border:1px solid rgba(255,255,255,.14);
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)); box-shadow: 0 24px 80px rgba(0,0,0,.55);
+  padding:14px;
+}
+.modalHeader{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 6px 10px;}
+.modalTitle{font-weight:900; font-size:18px;}
+.modalX{border:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.18); color: var(--text);
+  width:38px; height:38px; border-radius:12px; cursor:pointer; font-weight:900;
+}
+.modalBody{padding:6px;}
+.modalScore{font-weight:900; font-size:26px; margin:4px 0 8px;}
+.modalSmall{color: var(--muted); font-size:13px; line-height:1.6;}
+.modalActions{display:grid; grid-template-columns: 1fr 1fr; gap:10px; padding:8px 6px 2px;}
+@media (max-width:520px){.modalActions{grid-template-columns:1fr}}
+
+    .h2{margin:0 0 10px; font-size:16px; font-weight:900;}
+    .hint{margin:0 0 10px; color:var(--muted); font-size:12px; line-height:1.6;}
+    .row{display:grid; gap:8px; margin-bottom:10px;}
+    label{display:flex; justify-content:space-between; gap:10px; color:var(--muted); font-size:13px;}
+    input[type="range"]{width:100%}
+    select{
+      width:100%;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.22);
+      color:var(--text);
+      outline:none;
+    }
+
+    .log{max-height: 340px; overflow:auto; display:flex; flex-direction:column; gap:8px;}
+    .logItem{
+      padding:10px 12px; border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color:var(--muted); font-size:13px;
+      display:flex; justify-content:space-between; gap:10px; align-items:center;
+    }
+    .tag{
+      padding:6px 10px; border-radius:999px;
+      font-weight:900; color:var(--text);
+      border:1px solid rgba(255,255,255,.12);
+      white-space:nowrap; background: rgba(255,255,255,.08);
+    }
+    .tag.ok{border-color: rgba(45,212,191,.38); background: rgba(45,212,191,.16)}
+    .tag.bad{border-color: rgba(251,113,133,.38); background: rgba(251,113,133,.14)}
+    .tag.warn{border-color: rgba(251,191,36,.38); background: rgba(251,191,36,.14)}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="panel">
+      <div class="stageWrap"><div class="stageBanner" id="stageTitle">المرحلة الأولى</div></div>
+
+      <div class="arenaTop">
+        <div class="stats">
+          <div class="pill">🧩 المجموعة: <b id="groupText">1</b>/<b id="groupTotal">16</b></div>
+          <div class="pill">🎚️ BPM: <b id="bpmText">110</b></div>
+          <div class="pill">🎯 الدور: <b id="stepText">1</b>/8</div>
+          <div class="pill">⭐ سكور الجولة: <b id="scoreText">0</b>/80</div>
+          <div class="pill">🏁 مجموع الجولات: <b id="totalScoreText">0</b></div>
+          <div class="pill">🎙️ المايك: <b id="micState">غير مفعل</b></div>
+          <div class="pill">🧠 التعرف: <b id="asrState">غير مفعل</b></div>
+          <div class="pill">🗣️ آخر سماع: <b class="mono" id="lastHeard">—</b></div>
+        </div>
+      </div>
+
+      <div class="grid" id="grid"></div>
+
+      <div class="playWrap">
+        <button class="playBtn" id="playBtn">▶️ بدء اللعب</button>
+        <button class="playBtn nextBtn" id="nextStageBtn">⏭️ المرحلة التالية</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="h2">⚙️ إعدادات</div>
+      <div class="row">
+        <label><span>المجموعة الحالية</span><span id="groupLabel">1 / 16</span></label>
+        <input type="range" id="group" min="1" max="16" value="1">
+      </div>
+
+      <div class="row">
+        <label><span>BPM</span><span id="bpmLabel">110</span></label>
+        <input type="range" id="bpm" min="70" max="160" value="110">
+      </div>
+
+      <div class="row">
+        <label><span>لغة التعرّف</span><span id="langLabel">ar-SA</span></label>
+        <select id="asrLang">
+          <option value="ar-SA" selected>ar-SA (العربية)</option>
+          <option value="ar-IQ">ar-IQ (العراق)</option>
+          <option value="ar-EG">ar-EG (مصر)</option>
+          <option value="ar">ar (عام)</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label><span>حساسية مطابقة الصوت</span><span id="sensLabel">متساهل</span></label>
+        <select id="sens">
+          <option value="strict">صارم</option>
+          <option value="normal">عادي</option>
+          <option value="loose" selected>متساهل</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <button id="resetBtn" style="border-radius:14px;padding:10px 12px;font-weight:900;color:var(--text);background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.12);cursor:pointer;">🔄 تصفير السجل/السكور</button>
+      </div>
+
+      <div class="h2" style="margin-top:6px">📜 سجل التحقق بعد النهاية</div>
+      <div class="log" id="log"></div>
+
+      
+    </div>
+  </div>
+
+  <!-- نافذة النتيجة النهائية -->
+  <div id="finalModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="finalTitle">
+    <div class="modalBackdrop" id="finalBackdrop"></div>
+    <div class="modalCard">
+      <div class="modalHeader">
+        <div class="modalTitle" id="finalTitle">🏁 النتيجة النهائية</div>
+        <button class="modalX" id="finalClose" aria-label="إغلاق">✕</button>
+      </div>
+      <div class="modalBody">
+        <div class="modalScore" id="finalScoreLine">—</div>
+        <div class="modalSmall" id="finalDetailLine">—</div>
+      </div>
+      <div class="modalActions">
+        <button class="playBtn nextBtn" id="finalRestart">🔁 إعادة من البداية</button>
+        <button class="playBtn" id="finalOk">✅ تم</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id)=>document.getElementById(id);
+    const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+    const now=()=>performance.now();
+
+    function normalizeArabic(s){
+      return (s||"")
+        .toLowerCase()
+        .replace(/[ًٌٍَُِّْـ]/g,"")
+        .replace(/[أإآا]/g,"ا")
+        .replace(/[ىي]/g,"ي")
+        .replace(/[ة]/g,"ه")
+        .replace(/[ؤ]/g,"و")
+        .replace(/[ئ]/g,"ي")
+        .replace(/[^\u0600-\u06FF0-9a-z ]+/g," ")
+        .replace(/\s+/g," ")
+        .trim();
+    }
+
+    // ===== Speech Recognition (collect full round) =====
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognizer=null;
+    let recogRunning=false;
+
+    let finalTranscript = "";     // appended when isFinal
+    let lastInterim = "";         // latest interim
+    let allowAsrRestart = false;
+    let asrPhase = "idle"; // idle | playing | ending
+
+    function setMicState(txt){ $("micState").textContent = txt; }
+    function setAsrState(txt){ $("asrState").textContent = txt; }
+
+    function isSpeechSupported(){
+      return !!SpeechRec;
+    }
+
+    function isSecure(){
+      // Web Speech API غالباً يحتاج https (أو localhost)
+      return (window.isSecureContext || location.hostname === "localhost" || location.hostname === "127.0.0.1");
+    }
+
+    function setupRecognizer(){
+      if(!SpeechRec) return false;
+      recognizer = new SpeechRec();
+      // NOTE: "ar" مرات يطلع ضعيف، فخليّنا اختيار لغة مضبوط
+      recognizer.lang = $("asrLang").value || "ar-SA";
+      recognizer.interimResults = true;
+      recognizer.continuous = true;
+      recognizer.maxAlternatives = 3;
+
+      recognizer.onstart = ()=> { setAsrState("شغال"); };
+
+      recognizer.onresult = (ev)=>{
+        // بعض تطبيقات Web Speech ترجع النتائج بشكل "تراكمي" (كل سطر يحتوي كل الجملة لحد الآن)
+        // أو ترجع مقاطع منفصلة. إذا نجمعهم مباشرة يصير تكرار ضخم.
+        // الحل: نجمع بشكل ذكي على مستوى الكلمات (overlap merge).
+
+        const segs = [];
+        for(let i=0;i<ev.results.length;i++){
+          const r = ev.results[i];
+          const txtRaw = (r && r[0] && r[0].transcript) ? r[0].transcript : "";
+          const seg = normalizeArabic(txtRaw);
+          if(seg) segs.push(seg);
+        }
+
+        let merged = "";
+        for(const seg of segs){
+          if(!merged){
+            merged = seg;
+            continue;
+          }
+
+          // إذا seg تحتوي merged بالكامل (تراكمي) استبدل
+          if(seg.startsWith(merged)){
+            merged = seg;
+            continue;
+          }
+          // إذا seg مجرد prefix من merged، تجاهل
+          if(merged.startsWith(seg)){
+            continue;
+          }
+
+          const a = merged.split(" ");
+          const b = seg.split(" ");
+          let overlap = 0;
+          const max = Math.min(a.length, b.length);
+          for(let k=max; k>=1; k--){
+            if(a.slice(-k).join(" ") === b.slice(0,k).join(" ")){
+              overlap = k;
+              break;
+            }
+          }
+          merged = a.concat(b.slice(overlap)).join(" ");
+        }
+
+        finalTranscript = normalizeArabic(merged);
+        lastInterim = "";
+
+        const show = finalTranscript;
+        $("lastHeard").textContent = show ? (show.length>28 ? show.slice(0,28)+"…" : show) : "—";
+      };
+
+      recognizer.onerror = (e)=>{
+        const err = (e && e.error) ? e.error : "غير معروف";
+        // أخطاء شائعة: not-allowed | audio-capture | network | service-not-allowed
+        setAsrState("خطأ: " + err);
+        // إذا صار audio-capture مرات إعادة التشغيل تحل
+        if(err === "audio-capture" || err === "network"){
+          allowAsrRestart = true;
+        }
+      };
+
+      recognizer.onend = ()=>{
+        if(recogRunning && allowAsrRestart && asrPhase === "playing"){
+          try{ recognizer.start(); }catch(e){}
+        }else{
+          setAsrState("متوقف");
+        }
+      };
+
+      return true;
+    }
+
+    async function startMicAuto(){
+      // 1) لازم https/localhost
+      if(!isSecure()){
+        setMicState("يحتاج HTTPS");
+        setAsrState("غير شغال");
+        log("تنبيه","لازم تفتح الصفحة على https أو localhost حتى يشتغل التعرّف.","warn");
+        return false;
+      }
+
+      // 2) إذا SpeechRecognition غير مدعوم
+      if(!isSpeechSupported()){
+        setMicState("مدعوم");
+        setAsrState("غير مدعوم");
+        log("تنبيه","SpeechRecognition غير مدعوم بهالمتصفح. جرّب Chrome (Desktop/Android).","warn");
+        return false;
+      }
+
+      // 3) جهّز الريكنايزر
+      if(!recognizer && !setupRecognizer()){
+        setAsrState("غير مدعوم");
+        return false;
+      }
+
+      // 4) شغّل التعرّف — من غير getUserMedia حتى ما يصير تعارض على بعض الأجهزة
+      try{
+        recogRunning=true;
+        finalTranscript = "";
+        lastInterim = "";
+        $("lastHeard").textContent = "—";
+        allowAsrRestart = true;
+        asrPhase = "playing";
+        recognizer.lang = $("asrLang").value || "ar-SA";
+        recognizer.start();
+        setMicState("شغال");
+        setAsrState("شغال");
+        return true;
+      }catch(e){
+        setMicState("شغال");
+        setAsrState("متوقف");
+        log("تنبيه","ما كدرنا نبدي SpeechRecognition (يمكن مرفوض/مشغّل مسبقاً). جرّب تعيد تحميل الصفحة وتسمح للمايك.","warn");
+        return false;
+      }
+    }
+
+    function hardStopMic(){
+      allowAsrRestart = false;
+      recogRunning = false;
+      asrPhase = "idle";
+      try{ if(recognizer) recognizer.stop(); }catch(e){}
+      setMicState("متوقف");
+      setAsrState("متوقف");
+    }
+
+    // ===== Data =====
+    const WORDS = ["ناقة","باقة","بوق","حار","نار","طاقة","طوق","سوق","فوق","فار","جار"];
+    const ICONS = {"ناقة":"🐪","باقة":"💐","بوق":"🎺","حار":"🌶️","نار":"🔥","طاقة":"💡","طوق":"📿","سوق":"🛒","فوق":"⬆️","فار":"🐭","جار":"🚪"};
+    const THEME = {"ناقة":"t-gold","باقة":"t-pink","بوق":"t-purple","حار":"t-red","نار":"t-red","طاقة":"t-green","طوق":"t-blue","سوق":"t-gold","فوق":"t-gray","فار":"t-gray","جار":"t-blue"};
+
+    const GROUPS = [
+      { title:"المرحلة الأولى", tiles:["ناقة","ناقة","ناقة","ناقة","ناقة","ناقة","ناقة","ناقة"] },
+      { title:"المرحلة الأولى", tiles:["باقة","باقة","باقة","باقة","باقة","باقة","باقة","باقة"] },
+      { title:"المرحلة الأولى", tiles:["بوق","بوق","بوق","بوق","بوق","بوق","بوق","بوق"] },
+      { title:"المرحلة الأولى", tiles:["ناقة","بوق","ناقة","بوق","ناقة","بوق","ناقة","بوق"] },
+      { title:"المرحلة الأولى", tiles:["باقة","ناقة","بوق","ناقة","بوق","ناقة","باقة","بوق"] },
+      { title:"المرحلة الأولى", tiles:["ناقة","بوق","باقة","فوق","بوق","ناقة","بوق","باقة"] },
+
+      { title:"المرحلة الثانية", tiles:["حار","حار","حار","حار","حار","حار","حار","حار"] },
+      { title:"المرحلة الثانية", tiles:["نار","نار","نار","نار","نار","نار","نار","نار"] },
+      { title:"المرحلة الثانية", tiles:["نار","نار","حار","حار","باقة","بوق","حار","نار"] },
+      { title:"المرحلة الثانية", tiles:["ناقة","باقة","طوق","طوق","باقة","طوق","نار","حار"] },
+{ title:"المرحلة الثالثة", tiles:["ناقة","باقة","بوق","ناقة","باقة","سوق","ناقة","باقة"] },
+      { title:"المرحلة الثالثة", tiles:["حار","ناقة","نار","حار","باقة","بوق","ناقة","نار"] },
+      { title:"المرحلة الثالثة", tiles:["باقة","بوق","ناقة","بوق","بوق","باقة","نار","ناقة"] },
+      { title:"المرحلة الثالثة", tiles:["باقة","ناقة","طوق","باقة","طوق","ناقة","بوق","ناقة"] },
+      { title:"المرحلة الثالثة", tiles:["طاقة","طوق","ناقة","نار","حار","طوق","بوق","باقة"] },
+      { title:"المرحلة الرابعة", tiles:["فار","حار","ناقة","طوق","جار","فار","ناقة","بوق"] }
+    ];
+
+    // ===== Game State =====
+    let groupIndex=0;
+    let bpm=110;
+    let intervalMs=60000/bpm;
+
+    let running=false;
+    let timer=null;
+
+    let activePos=0;
+    let score=0; // سكور الجولة الحالية (0..80)
+
+    // تجميع سكور كل الجولات + المجموع
+    let groupScores = new Array(GROUPS.length).fill(0);
+    let totalScore = 0;
+    let lastRawRound = ""; // نص خام محفوظ للجولة الأخيرة
+
+    function currentGroup(){ return GROUPS[groupIndex]; }
+    function expectedWord(pos){ return currentGroup().tiles[pos] || ""; }
+
+    // ===== UI =====
+    function log(tag, msg, type){
+      const item=document.createElement("div");
+      item.className="logItem";
+      const left=document.createElement("div");
+      left.textContent=msg;
+      const t=document.createElement("div");
+      t.className=`tag ${type||""}`;
+      t.textContent=tag;
+      item.appendChild(left);
+      item.appendChild(t);
+      $("log").prepend(item);
+    }
+
+    function updateHUD(){
+      $("stageTitle").textContent = currentGroup().title;
+      $("groupText").textContent = (groupIndex+1);
+      $("groupTotal").textContent = String(GROUPS.length);
+      $("groupLabel").textContent = `${groupIndex+1} / ${GROUPS.length}`;
+      $("groupTotal").textContent = String(GROUPS.length);
+      $("bpmText").textContent = bpm;
+      $("bpmLabel").textContent = bpm;
+      $("stepText").textContent = (activePos+1);
+      $("scoreText").textContent = score;
+      $("totalScoreText").textContent = totalScore;
+      $("langLabel").textContent = $("asrLang").value;
+      $("sensLabel").textContent = $("sens").value==="strict" ? "صارم" : $("sens").value==="loose" ? "متساهل" : "عادي";
+    }
+
+    function buildGrid(){
+      const g=$("grid");
+      g.innerHTML="";
+      const tiles=currentGroup().tiles;
+      tiles.forEach((w,i)=>{
+        const card=document.createElement("div");
+        card.className = `card ${THEME[w]||""}`;
+        card.dataset.pos = String(i);
+
+        const inner=document.createElement("div");
+        inner.className="cardInner";
+
+        const icon=document.createElement("div");
+        icon.className="iconBox";
+        icon.textContent = ICONS[w] || "✨";
+
+        const label=document.createElement("div");
+        label.className="wordLabel";
+        label.textContent = w;
+
+        inner.appendChild(icon);
+        inner.appendChild(label);
+        card.appendChild(inner);
+        g.appendChild(card);
+      });
+      setActive(0);
+    }
+
+    function setActive(pos){
+      document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
+      const el=document.querySelector(`.card[data-pos="${pos}"]`);
+      if(el) el.classList.add("active");
+      activePos=pos;
+      updateHUD();
+    }
+
+    // ===== Matching after end =====
+    function voiceMatchesExpected(heard, expected){
+      const h=normalizeArabic(heard);
+      const e=normalizeArabic(expected);
+      if(!h || !e) return false;
+
+      const mode=$("sens").value;
+      if(mode==="strict") return h===e;
+
+      const ht = " " + h + " ";
+      const et = " " + e + " ";
+
+      if(mode==="normal"){
+        return h===e || ht.includes(et) || h.replaceAll(" ","")===e.replaceAll(" ","");
+      }
+
+      // loose
+      if(h===e) return true;
+      if(ht.includes(et)) return true;
+      if(h.replaceAll(" ","")===e.replaceAll(" ","")) return true;
+      if(e.length>=2 && h.includes(e)) return true;
+      return false;
+    }
+
+    function extractFirstNWords(text, n){
+      const t = normalizeArabic(text);
+      if(!t) return [];
+      const tokens = t.split(" ").filter(Boolean);
+      return tokens.slice(0, n);
+    }
+
+    function finalizeRoundAndVerify(){
+      const raw = (finalTranscript || lastInterim || "").trim();
+      lastRawRound = raw || "";
+
+      const saidSeq = extractFirstNWords(raw, 8); // ✅ فقط أول 8 كلمات
+
+      if(!raw){
+        log("تنبيه", "ما وصلنا نص من التعرف الصوتي (قال: —). تأكد من https + Chrome، وجرّب تغيّر لغة التعرّف.", "warn");
+      } else if(saidSeq.length < 8){
+        log("تنبيه", `المطلوب 8 كلمات، بس اللي انسمع ${saidSeq.length}. راح نحسب الموجود فقط والباقي يعتبر خطأ.`, "warn");
+      }
+
+      score = 0;
+      for(let i=0;i<8;i++){
+        const expected = expectedWord(i);
+        const said = saidSeq[i] || "—";
+        const ok = (said !== "—") && voiceMatchesExpected(said, expected);
+        if(ok){
+          score += 10;
+          log("✅ صح", `#${i+1} قال: "${said}" | المطلوب: "${expected}" (+10)`, "ok");
+        }else{
+          log("❌ خطأ", `#${i+1} قال: "${said}" | المطلوب: "${expected}"`, "bad");
+        }
+      }
+
+      // احفظ سكور الجولة الحالية (إعادة اللعب لنفس الجولة يستبدل سكورها)
+      groupScores[groupIndex] = score;
+      totalScore = groupScores.reduce((a,b)=>a+(b||0), 0);
+
+      updateHUD();
+    }
+
+    // ===== Loop =====
+    function scheduleNext(){
+      if(!running) return;
+      timer = setTimeout(()=>{
+        if(!running) return;
+
+        const next = activePos + 1;
+        if(next >= 8){
+          finishRound();
+          return;
+        }
+        setActive(next);
+        scheduleNext();
+      }, intervalMs);
+    }
+
+    async function finishRound(){
+      running=false;
+      if(timer) clearTimeout(timer);
+      timer=null;
+
+      asrPhase = "ending";
+      allowAsrRestart = false;
+
+      // نوقف التعرّف وننتظر شوي حتى يلحق يفلّش آخر نتيجة
+      try{ if(recognizer) recognizer.stop(); }catch(e){}
+      await new Promise(r=>setTimeout(r, 1200));
+
+      finalizeRoundAndVerify();
+
+      hardStopMic();
+      asrPhase = "idle";
+
+      $("playBtn").disabled=false;
+      $("nextStageBtn").disabled=false;
+
+      // نخلي النص الخام "بداية السجل" (لأن log() يسوي prepend)
+      log("نهاية", `انتهت الجولة. سكور: ${score}/80 | مجموع: ${totalScore}`, "warn");
+      log("نص خام", lastRawRound ? lastRawRound : "—", "warn");
+    }
+
+    async function startGame(){
+      if(running) return;
+
+      const playEl = $("playBtn");
+      const nextEl = $("nextStageBtn");
+      const originalText = playEl.textContent;
+
+      playEl.disabled=true;
+      nextEl.disabled=true;
+
+      // عدّ تنازلي سريع 3..0
+      for(let i=3;i>=0;i--){
+        playEl.textContent = `⏳ ${i}`;
+        await new Promise(r=>setTimeout(r, 260));
+      }
+      playEl.textContent = "🎙️ تشغيل المايك…";
+
+      $("log").innerHTML = "";
+
+      bpm = clamp(parseInt($("bpm").value,10)||110, 40, 220);
+      intervalMs = 60000 / bpm;
+
+      // ابدأ المايك بعد العد التنازلي
+      await startMicAuto();
+
+      running=true;
+      score=0; // سكور هالمحاولة للجولة الحالية
+      activePos=0;
+
+      buildGrid();
+      log("بدء", "سجلنا المجموعة كاملة… بعد النهاية راح يطلع التحقق.", "warn");
+
+      if(timer) clearTimeout(timer);
+      scheduleNext();
+
+      // رجّع نص الزر بعد بداية اللعبة
+      playEl.textContent = originalText;
+    }
+
+    function loadGroup(idx){
+      groupIndex = clamp(idx, 0, GROUPS.length-1);
+      running=false;
+      if(timer) clearTimeout(timer);
+      timer=null;
+      hardStopMic();
+
+      // اعرض سكور الجولة المحفوظ
+      score = groupScores[groupIndex] || 0;
+      totalScore = groupScores.reduce((a,b)=>a+(b||0), 0);
+      activePos=0;
+      finalTranscript="";
+      lastInterim="";
+      $("lastHeard").textContent="—";
+
+      buildGrid();
+      updateHUD();
+
+      $("log").innerHTML="";
+      $("playBtn").disabled=false;
+      $("nextStageBtn").disabled=false;
+      log("جاهز", `اخترت المجموعة ${groupIndex+1} — اضغط بدء اللعب`, "warn");
+    }
+
+    // ===== Events =====
+    $("playBtn").addEventListener("click", startGame);
+
+    $("nextStageBtn").addEventListener("click", ()=>{
+      if(running) return;
+
+      // إذا آخر جولة، اعرض النتيجة النهائية بدل الانتقال
+      if(groupIndex === GROUPS.length - 1){
+        showFinalModal();
+        return;
+      }
+
+      const next = (groupIndex + 1) % GROUPS.length;
+      $("group").value = String(next + 1);
+      loadGroup(next);
+    });
+
+    $("group").addEventListener("input", (e)=>{
+      loadGroup((parseInt(e.target.value,10)||1)-1);
+    });
+
+    $("bpm").addEventListener("input", (e)=>{
+      bpm = clamp(parseInt(e.target.value,10)||110, 40, 220);
+      intervalMs = 60000 / bpm;
+      $("bpmLabel").textContent=bpm;
+      $("bpmText").textContent=bpm;
+    });
+
+    $("sens").addEventListener("change", updateHUD);
+    $("asrLang").addEventListener("change", ()=>{
+      updateHUD();
+      // إذا كان شغال وغيّرت اللغة، أوقف وبعدين شغّل بالجولة الجاية (أكثر استقرار)
+      if(recogRunning){
+        try{ if(recognizer) recognizer.stop(); }catch(e){}
+      }
+    });
+
+    $("resetBtn").addEventListener("click", ()=>{
+      $("log").innerHTML="";
+      groupScores = new Array(GROUPS.length).fill(0);
+      totalScore = 0;
+      score=0;
+      activePos=0;
+      finalTranscript="";
+      lastInterim="";
+      $("lastHeard").textContent="—";
+      updateHUD();
+      log("تصفير","تم تصفير السجل/السكور","warn");
+    });
+
+    function showFinalModal(){
+      const played = groupScores.filter(s=>s>0).length;
+      const maxTotal = GROUPS.length * 80;
+      const pct = maxTotal ? Math.round((totalScore / maxTotal) * 100) : 0;
+      $("finalScoreLine").textContent = `السكور النهائي: ${totalScore} / ${maxTotal}`;
+      $("finalDetailLine").textContent = `الجولات المحسوبة: ${played} / ${GROUPS.length} — نسبة: ${pct}%`;
+      $("finalModal").classList.remove("hidden");
+    }
+
+    function hideFinalModal(){
+      $("finalModal").classList.add("hidden");
+    }
+
+    $("finalBackdrop").addEventListener("click", hideFinalModal);
+    $("finalClose").addEventListener("click", hideFinalModal);
+    $("finalOk").addEventListener("click", hideFinalModal);
+    $("finalRestart").addEventListener("click", ()=>{
+      hideFinalModal();
+      // رجّع لأول جولة
+      $("group").value = "1";
+      loadGroup(0);
+    });
+
+    // Init
+    // اربط السلايدر بعدد الجولات
+    $("group").max = String(GROUPS.length);
+
+    if(!isSecure()){
+      setMicState("يحتاج HTTPS");
+      setAsrState("غير شغال");
+      log("تنبيه","افتح الصفحة على https أو localhost حتى يشتغل التعرّف الصوتي.","warn");
+    }else if(!isSpeechSupported()){
+      setMicState("مدعوم");
+      setAsrState("غير مدعوم");
+      log("تنبيه","SpeechRecognition غير مدعوم (الميك ممكن يشتغل بس ما يحول كلام لنص).","warn");
+    }else{
+      setMicState("غير مفعل");
+      setAsrState("غير مفعل");
+    }
+
+    updateHUD();
+    loadGroup(0);
+  </script>
+</body>
+</html>
